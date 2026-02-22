@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gewächshaus Steuerung</title>
+    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="stylesheet" href="assets/auto-toggle-styles.css">
+    <link rel="stylesheet" href="assets/modal-styles.css">
+    <link rel="stylesheet" href="assets/settings-styles.css">
+</head>
+
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-container">
+        <div class="login-card">
+            <h1><img src="favicon.ico" class="logo" alt="Logo"> Gewächshaus</h1>
+            <p>Bitte anmelden</p>
+            <form id="login-form">
+                <input type="password" id="password" placeholder="Passwort" required autocomplete="current-password">
+                <button type="submit">Anmelden</button>
+            </form>
+            <div id="login-error" class="error-message"></div>
+        </div>
+    </div>
+
+    <!-- Main App (hidden until logged in) -->
+    <div id="app" class="app-container" style="display: none;">
+        <!-- Header -->
+        <header class="header">
+            <h1><img src="favicon.ico" class="logo" alt="Logo"> Gewächshaus Steuerung</h1>
+            <button id="logout-btn" class="logout-btn">Abmelden</button>
+        </header>
+
+        <!-- Feedback Div -->
+        <div id="feedback" class="feedback-bar"></div>
+
+        <!-- Status Card -->
+        <div class="card">
+            <div class="status-section">
+                <div class="status-item">
+                    <strong>Modus:</strong>
+                    <span id="mode" class="mode-badge">MANUAL</span>
+                </div>
+                <div class="status-item">
+                    <strong>Status:</strong>
+                    <span id="status">Lädt...</span>
+                </div>
+                <div class="status-item">
+                    <strong>Letzte Aktion:</strong>
+                    <span id="last-action">---</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Temperature Card -->
+        <div class="card">
+            <h2>🌡️ Temperaturen</h2>
+            <div class="temp-grid">
+                <div class="temp-box">
+                    <div class="temp-label">Innen</div>
+                    <div class="temp-value" id="temp-in">---</div>
+                </div>
+                <div class="temp-box">
+                    <div class="temp-label">Außen</div>
+                    <div class="temp-value" id="temp-out">---</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Controls Card -->
+        <div class="card">
+            <h2>🌐 Globale Steuerung</h2>
+            <div class="controls">
+                <!-- Global Mode Toggle Switch -->
+                <div class="auto-toggle-container global-mode-toggle">
+                    <span class="auto-toggle-label">Manuell</span>
+                    <label class="auto-toggle-switch">
+                        <input type="checkbox" id="global-mode-checkbox" onchange="handleModeToggle(this)">
+                        <span class="auto-toggle-slider"></span>
+                    </label>
+                    <span class="auto-toggle-label">Automatik</span>
+                </div>
+                <!-- NEU: Eingabefeld für die Ziel-Temperatur -->
+                <div class="temp-input-container">
+                    <label for="target-temp-input">Ziel-Temp (°C):</label>
+                    <input type="number" id="target-temp-input" value="24.0" step="0.5" class="temp-input">
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-open" id="btn-open" onclick="sendCommand('OPEN_ALL')">🔼 Alles
+                        ÖFFNEN</button>
+                    <button class="btn btn-close" id="btn-close" onclick="sendCommand('CLOSE_ALL')">🔽 Alles
+                        SCHLIESSEN</button>
+                </div>
+            </div>
+
+            <!-- Global Partial Opening -->
+            <h3 style="margin-top: 20px;">Alle Tore teilweise öffnen:</h3>
+            <div class="button-group partial-buttons">
+                <button class="btn-partial" onclick="sendCommand('PARTIAL_20')">20%</button>
+                <button class="btn-partial" onclick="sendCommand('PARTIAL_40')">40%</button>
+                <button class="btn-partial" onclick="sendCommand('PARTIAL_60')">60%</button>
+                <button class="btn-partial" onclick="sendCommand('PARTIAL_80')">80%</button>
+                <button class="btn-partial" onclick="sendCommand('PARTIAL_100')">100%</button>
+            </div>
+        </div>
+
+        <!-- Individual Motor Controls -->
+        <div class="card">
+            <h2>🎛️ Einzelsteuerung</h2>
+            <div class="motor-grid">
+                <!-- GH1 Vorne -->
+                <div class="motor-card">
+                    <h3>GH-Süd Tor-Süden</h3>
+
+                    <!-- Auto-Mode Toggle -->
+                    <div class="auto-toggle-container">
+                        <label class="auto-toggle-switch">
+                            <input type="checkbox" id="auto-GH1_VORNE"
+                                onchange="toggleGateAuto('GH1_VORNE', this.checked)" checked>
+                            <span class="auto-toggle-slider"></span>
+                        </label>
+                        <span class="auto-toggle-label">Auto</span>
+                    </div>
+
+                    <div class="position-display">
+                        <div class="position-bar">
+                            <div class="position-fill" id="pos-GH1_VORNE" style="width: 0%"></div>
+                        </div>
+                        <span id="pos-text-GH1_VORNE" class="position-text">0%</span>
+                    </div>
+                    <div class="motor-controls">
+                        <button class="btn-motor btn-motor-open" onclick="sendCommand('OPEN_GH1_VORNE')">Öffnen</button>
+                        <button class="btn-motor btn-motor-close"
+                            onclick="sendCommand('CLOSE_GH1_VORNE')">Schließen</button>
+                    </div>
+                    <div class="motor-partial">
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH1_VORNE_20')">20%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH1_VORNE_40')">40%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH1_VORNE_60')">60%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH1_VORNE_80')">80%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH1_VORNE_100')">100%</button>
+                    </div>
+                </div>
+
+                <!-- GH1 Hinten -->
+                <div class="motor-card">
+                    <h3>GH-Süd Tor-Norden</h3>
+
+                    <!-- Auto-Mode Toggle -->
+                    <div class="auto-toggle-container">
+                        <label class="auto-toggle-switch">
+                            <input type="checkbox" id="auto-GH1_HINTEN"
+                                onchange="toggleGateAuto('GH1_HINTEN', this.checked)" checked>
+                            <span class="auto-toggle-slider"></span>
+                        </label>
+                        <span class="auto-toggle-label">Auto</span>
+                    </div>
+
+                    <div class="position-display">
+                        <div class="position-bar">
+                            <div class="position-fill" id="pos-GH1_HINTEN" style="width: 0%"></div>
+                        </div>
+                        <span id="pos-text-GH1_HINTEN" class="position-text">0%</span>
+                    </div>
+                    <div class="motor-controls">
+                        <button class="btn-motor btn-motor-open"
+                            onclick="sendCommand('OPEN_GH1_HINTEN')">Öffnen</button>
+                        <button class="btn-motor btn-motor-close"
+                            onclick="sendCommand('CLOSE_GH1_HINTEN')">Schließen</button>
+                    </div>
+                    <div class="motor-partial">
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH1_HINTEN_20')">20%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH1_HINTEN_40')">40%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH1_HINTEN_60')">60%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH1_HINTEN_80')">80%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH1_HINTEN_100')">100%</button>
+                    </div>
+                </div>
+
+                <!-- GH2 Vorne -->
+                <div class="motor-card">
+                    <h3>GH-Mitte Tor-Süden</h3>
+
+                    <!-- Auto-Mode Toggle -->
+                    <div class="auto-toggle-container">
+                        <label class="auto-toggle-switch">
+                            <input type="checkbox" id="auto-GH2_VORNE"
+                                onchange="toggleGateAuto('GH2_VORNE', this.checked)" checked>
+                            <span class="auto-toggle-slider"></span>
+                        </label>
+                        <span class="auto-toggle-label">Auto</span>
+                    </div>
+
+                    <div class="position-display">
+                        <div class="position-bar">
+                            <div class="position-fill" id="pos-GH2_VORNE" style="width: 0%"></div>
+                        </div>
+                        <span id="pos-text-GH2_VORNE" class="position-text">0%</span>
+                    </div>
+                    <div class="motor-controls">
+                        <button class="btn-motor btn-motor-open" onclick="sendCommand('OPEN_GH2_VORNE')">Öffnen</button>
+                        <button class="btn-motor btn-motor-close"
+                            onclick="sendCommand('CLOSE_GH2_VORNE')">Schließen</button>
+                    </div>
+                    <div class="motor-partial">
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH2_VORNE_20')">20%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH2_VORNE_40')">40%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH2_VORNE_60')">60%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH2_VORNE_80')">80%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH2_VORNE_100')">100%</button>
+                    </div>
+                </div>
+
+                <!-- GH2 Hinten -->
+                <div class="motor-card">
+                    <h3>GH-Mitte Tor-Norden</h3>
+
+                    <!-- Auto-Mode Toggle -->
+                    <div class="auto-toggle-container">
+                        <label class="auto-toggle-switch">
+                            <input type="checkbox" id="auto-GH2_HINTEN"
+                                onchange="toggleGateAuto('GH2_HINTEN', this.checked)" checked>
+                            <span class="auto-toggle-slider"></span>
+                        </label>
+                        <span class="auto-toggle-label">Auto</span>
+                    </div>
+
+                    <div class="position-display">
+                        <div class="position-bar">
+                            <div class="position-fill" id="pos-GH2_HINTEN" style="width: 0%"></div>
+                        </div>
+                        <span id="pos-text-GH2_HINTEN" class="position-text">0%</span>
+                    </div>
+                    <div class="motor-controls">
+                        <button class="btn-motor btn-motor-open"
+                            onclick="sendCommand('OPEN_GH2_HINTEN')">Öffnen</button>
+                        <button class="btn-motor btn-motor-close"
+                            onclick="sendCommand('CLOSE_GH2_HINTEN')">Schließen</button>
+                    </div>
+                    <div class="motor-partial">
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH2_HINTEN_20')">20%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH2_HINTEN_40')">40%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH2_HINTEN_60')">60%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH2_HINTEN_80')">80%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH2_HINTEN_100')">100%</button>
+                    </div>
+                </div>
+
+                <!-- GH3 Vorne -->
+                <div class="motor-card">
+                    <h3>GH-Norden Tor-Süden</h3>
+
+                    <!-- Auto-Mode Toggle -->
+                    <div class="auto-toggle-container">
+                        <label class="auto-toggle-switch">
+                            <input type="checkbox" id="auto-GH3_VORNE"
+                                onchange="toggleGateAuto('GH3_VORNE', this.checked)" checked>
+                            <span class="auto-toggle-slider"></span>
+                        </label>
+                        <span class="auto-toggle-label">Auto</span>
+                    </div>
+
+                    <div class="position-display">
+                        <div class="position-bar">
+                            <div class="position-fill" id="pos-GH3_VORNE" style="width: 0%"></div>
+                        </div>
+                        <span id="pos-text-GH3_VORNE" class="position-text">0%</span>
+                    </div>
+                    <div class="motor-controls">
+                        <button class="btn-motor btn-motor-open" onclick="sendCommand('OPEN_GH3_VORNE')">Öffnen</button>
+                        <button class="btn-motor btn-motor-close"
+                            onclick="sendCommand('CLOSE_GH3_VORNE')">Schließen</button>
+                    </div>
+                    <div class="motor-partial">
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH3_VORNE_20')">20%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH3_VORNE_40')">40%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH3_VORNE_60')">60%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH3_VORNE_80')">80%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH3_VORNE_100')">100%</button>
+                    </div>
+                </div>
+
+                <!-- GH3 Hinten -->
+                <div class="motor-card">
+                    <h3>GH-Norden Tor-Norden</h3>
+
+                    <!-- Auto-Mode Toggle -->
+                    <div class="auto-toggle-container">
+                        <label class="auto-toggle-switch">
+                            <input type="checkbox" id="auto-GH3_HINTEN"
+                                onchange="toggleGateAuto('GH3_HINTEN', this.checked)" checked>
+                            <span class="auto-toggle-slider"></span>
+                        </label>
+                        <span class="auto-toggle-label">Auto</span>
+                    </div>
+
+                    <div class="position-display">
+                        <div class="position-bar">
+                            <div class="position-fill" id="pos-GH3_HINTEN" style="width: 0%"></div>
+                        </div>
+                        <span id="pos-text-GH3_HINTEN" class="position-text">0%</span>
+                    </div>
+                    <div class="motor-controls">
+                        <button class="btn-motor btn-motor-open"
+                            onclick="sendCommand('OPEN_GH3_HINTEN')">Öffnen</button>
+                        <button class="btn-motor btn-motor-close"
+                            onclick="sendCommand('CLOSE_GH3_HINTEN')">Schließen</button>
+                    </div>
+                    <div class="motor-partial">
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH3_HINTEN_20')">20%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH3_HINTEN_40')">40%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH3_HINTEN_60')">60%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH3_HINTEN_80')">80%</button>
+                        <button class="btn-partial-small" onclick="sendCommand('PARTIAL_GH3_HINTEN_100')">100%</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lüftungssteuerung -->
+        <div class="card">
+            <h2>🌅 Lüftungssteuerung</h2>
+
+            <!-- Feste Lüftungszeiten -->
+            <div class="ventilation-section">
+                <h3 style="margin-top: 0;">Feste Zeiten</h3>
+
+                <div class="ventilation-controls" style="margin-bottom: 10px;">
+                    <label class="switch">
+                        <input type="checkbox" id="morning-vent-enabled" onchange="toggleMorningVent(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="ventilation-text">Morgens (1h nach Sonnenaufgang, 20 Min)</span>
+                </div>
+
+                <div class="ventilation-controls" style="margin-bottom: 10px;">
+                    <label class="switch">
+                        <input type="checkbox" id="midday-vent-enabled" onchange="toggleMiddayVent(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="ventilation-text">Mittags (12:00 Uhr, 20 Min)</span>
+                </div>
+
+                <div class="ventilation-controls">
+                    <label class="switch">
+                        <input type="checkbox" id="evening-vent-enabled" onchange="toggleEveningVent(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="ventilation-text">Abends (1h vor Sonnenuntergang, 20 Min)</span>
+                </div>
+            </div>
+
+            <!-- Custom Lüftungsphasen -->
+            <div class="ventilation-section indi-time"
+                style="margin-top: 25px; border-top: 1px solid #ddd; padding-top: 20px;">
+                <h3 style="margin-top: 0;">Individuelle Lüftungszeiten</h3>
+                <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">
+                    Bis zu 5 benutzerdefinierte Zeitfenster (läuft unabhängig vom Haupt-Lüftungsmodus)
+                </p>
+                <div id="custom-phases-list" style="margin-bottom: 15px;">
+                    <!-- Wird dynamisch von custom-ventilation.js geladen -->
+                </div>
+                <button class="btn btn-add-phase" onclick="addCustomPhase()" id="add-phase-btn"
+                    style="background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                    ➕ Neue Lüftungszeit hinzufügen
+                </button>
+            </div>
+        </div>
+        <!-- 
+            ANLEITUNG: Diesen Code VOR dem </div> (Ende vom app-container) einfügen
+            Also vor der Zeile mit dem Footer
+        -->
+
+        <!-- Modal für neue Lüftungszeit -->
+        <div id="ventilation-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <span class="modal-close" onclick="closeVentilationModal()">&times;</span>
+                <h3>Neue Lüftungszeit hinzufügen</h3>
+                <form id="ventilation-form" onsubmit="saveVentilationPhase(event)">
+                    <div class="form-group">
+                        <label for="phase-name">Name (optional):</label>
+                        <input type="text" id="phase-name" placeholder="z.B. Nachmittags">
+                    </div>
+                    <div class="form-group">
+                        <label for="phase-start">Startzeit:</label>
+                        <input type="time" id="phase-start" required value="14:00">
+                    </div>
+                    <div class="form-group">
+                        <label for="phase-end">Endzeit:</label>
+                        <input type="time" id="phase-end" required value="14:30">
+                    </div>
+                    <div id="modal-error" class="error-message" style="display: none;"></div>
+                    <div class="modal-buttons">
+                        <button type="button" class="btn btn-cancel"
+                            onclick="closeVentilationModal()">Abbrechen</button>
+                        <button type="submit" class="btn btn-save">Speichern</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- GPIO Switches (Bewässerung & Zusatz) -->
+        <div class="card">
+            <h2>🚰 Zusätzliche Steuerung</h2>
+            <p style="font-size: 0.9em; color: #666; margin-bottom: 15px;">
+                Manuelle Steuerung der zusätzlichen Relais
+            </p>
+            <div class="gpio-switches-grid" id="gpio-switches">
+                <!-- Wird dynamisch von gpio-switches.js geladen -->
+                <div style="text-align: center; padding: 20px; color: #999;">
+                    Lädt...
+                </div>
+            </div>
+        </div>
+
+        <!-- Erweiterte Einstellungen -->
+        <div class="card">
+            <div class="settings-header" onclick="toggleSettings()">
+                <h2>⚙️ Erweiterte Einstellungen</h2>
+                <span class="collapse-icon" id="collapse-icon">▼</span>
+            </div>
+
+            <div class="settings-panel" id="settings-panel" style="display: none;">
+                <!-- Temperatur-Einstellungen -->
+                <div class="setting-group">
+                    <h3>🌡️ Automatik-Temperatur</h3>
+                    <div class="setting-item">
+                        <label>Ziel-Temperatur (°C):</label>
+                        <input type="number" id="set-target-temp" step="0.5" min="10" max="40">
+                        <span class="help-text">Standard: 24.0°C</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Hysterese (±°C):</label>
+                        <input type="number" id="set-hysteresis" step="0.5" min="0.5" max="10">
+                        <span class="help-text">Toleranzbereich</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Schwellwert für Abfrage (°C):</label>
+                        <input type="number" id="set-temp-threshold" step="1" min="1" max="30">
+                        <span class="help-text">Für langsames Abfragen</span>
+                    </div>
+                </div>
+
+                <!-- Motor-Einstellungen -->
+                <div class="setting-group">
+                    <h3>🛠️ Motor-Laufzeiten</h3>
+                    <div class="setting-item">
+                        <label>Öffnen (Sekunden):</label>
+                        <input type="number" id="set-motor-open" min="60" max="300">
+                        <span class="help-text">Zeit für 0% → 100%</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Schließen (Sekunden):</label>
+                        <input type="number" id="set-motor-close" min="60" max="300">
+                        <span class="help-text">Zeit für 100% → 0%</span>
+                    </div>
+                </div>
+
+                <!-- Polling-Intervalle -->
+                <div class="setting-group">
+                    <h3>⏱️ Abfrage-Intervalle</h3>
+                    <div class="setting-item">
+                        <label>Schnell (Sekunden):</label>
+                        <input type="number" id="set-interval-fast" min="1" max="30">
+                        <span class="help-text">Nach Befehlen</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Normal (Sekunden):</label>
+                        <input type="number" id="set-interval-normal" min="5" max="120">
+                        <span class="help-text">Standard-Abfrage</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Langsam (Sekunden):</label>
+                        <input type="number" id="set-interval-slow" min="10" max="600">
+                        <span class="help-text">Weit vom Sollwert</span>
+                    </div>
+                </div>
+
+                <!-- Netzwerk-Einstellungen -->
+                <div class="setting-group">
+                    <h3>🌐 Netzwerk</h3>
+                    <div class="setting-item">
+                        <label>Max. Wiederholungen:</label>
+                        <input type="number" id="set-max-retries" min="1" max="10">
+                        <span class="help-text">Bei API-Fehlern</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Retry-Verzögerung (Sek.):</label>
+                        <input type="number" id="set-retry-delay" min="5" max="120">
+                        <span class="help-text">Warten zwischen Retries</span>
+                    </div>
+                </div>
+
+                <!-- Standort (read-only) -->
+                <div class="setting-group">
+                    <h3>📍 Standort (Nur Anzeige)</h3>
+                    <div class="setting-item">
+                        <label>Breitengrad:</label>
+                        <input type="text" id="set-location-lat" readonly>
+                        <span class="help-text">Für Sonnenberechnung</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Längengrad:</label>
+                        <input type="text" id="set-location-lon" readonly>
+                        <span class="help-text"></span>
+                    </div>
+                </div>
+
+                <!-- Pin-Definitionen (read-only) -->
+                <div class="setting-group">
+                    <h3>🔌 Hardware-Pins (Nur Anzeige)</h3>
+                    <div class="pin-info">
+                        <strong>Gewächshaus-Motoren:</strong><br>
+                        GH-Süd Tor-Süden: Pin 17 (AUF), 27 (ZU)<br>
+                        GH-Süd Tor-Norden: Pin 22 (AUF), 10 (ZU)<br>
+                        GH-Mitte Tor-Süden: Pin 9 (AUF), 11 (ZU)<br>
+                        GH-Mitte Tor-Norden: Pin 18 (AUF), 23 (ZU)<br>
+                        GH-Norden Tor-Süden: Pin 13 (AUF), 19 (ZU)<br>
+                        GH-Norden Tor-Norden: Pin 26 (AUF), 21 (ZU)
+                    </div>
+                    <div class="pin-info" style="margin-top: 10px;">
+                        <strong>GPIO-Schalter:</strong><br>
+                        Bewässerung 1: Pin 20<br>
+                        Bewässerung 2: Pin 16<br>
+                        Bewässerung 3: Pin 12<br>
+                        Zusatz: Pin 25
+                    </div>
+                </div>
+
+                <!-- Bestätigen-Button -->
+                <div class="setting-actions">
+                    <button class="btn btn-save-settings" onclick="saveSettings()">
+                        💾 Einstellungen Speichern
+                    </button>
+                    <button class="btn btn-cancel-settings" onclick="cancelSettings()">
+                        ❌ Abbrechen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer  -->
+        <footer class="footer">
+            <small>Letzte Aktualisierung: <span id="last-update">---</span></small>
+        </footer>
+    </div>
+    <script src="assets/app.js"></script>
+    <script src="assets/gate-auto-toggle.js"></script>
+    <script src="assets/gpio-switches.js"></script>
+    <script src="assets/custom-ventilation.js"></script>
+    <script src="assets/settings.js"></script>
+</body>
+
+</html>

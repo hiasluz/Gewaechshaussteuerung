@@ -1,0 +1,14 @@
+/dev/serial0
+115200
+nocrtscts
+debug
+lock
+local
+ipcp-accept-local
+ipcp-accept-remote
+usepeerdns
+defaultroute
+noauth
+hide-password
+persist
+connect "/usr/sbin/chat -v -f /etc/ppp/chat-sim7600"

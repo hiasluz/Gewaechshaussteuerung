@@ -1,0 +1,653 @@
+/**
+ * Gewächshaus Web-Interface - Enhanced Styles
+ */
+/* poppins-regular - latin */
+@font-face {
+    font-display: swap;
+    /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 400;
+    src: url('../fonts/Poppins-Regular.ttf') format('ttf');
+    /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
+/* poppins-600 - latin */
+@font-face {
+    font-display: swap;
+    /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 600;
+    src: url('../fonts/Poppins-Regular.ttf') format('ttf');
+    /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
+/* poppins-700 - latin */
+@font-face {
+    font-display: swap;
+    /* Check https://developer.mozilla.org/en-US/docs/Web/CSS/@font-face/font-display for other options. */
+    font-family: 'Poppins';
+    font-style: normal;
+    font-weight: 700;
+    src: url('../fonts/Poppins-SemiBold.ttf') format('ttf');
+    /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f8f8f8;
+    min-height: 100vh;
+    padding: 20px;
+    color: #666;
+}
+
+/* ===== LOGIN SCREEN ===== */
+
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.login-card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+}
+
+.login-card h1 {
+    color: #1f242e;
+    margin-bottom: 10px;
+    font-size: 2.5em;
+}
+
+.login-card p {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+#login-form input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1em;
+    margin-bottom: 15px;
+    transition: border-color 0.3s;
+}
+
+#login-form input:focus {
+    outline: none;
+    border-color: #ff6847;
+}
+
+#login-form button {
+    width: 100%;
+    padding: 15px;
+    background: #ff6847;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#login-form button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 104, 71, 0.4);
+}
+
+.error-message {
+    color: #e74c3c;
+    margin-top: 15px;
+    font-size: 0.9em;
+    min-height: 20px;
+}
+
+/* ===== MAIN APP ===== */
+.luftungsmodus-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.app-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    color: #1f242e;
+    font-size: 2em;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.logout-btn {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #1f242e;
+    border: 2px solid #1f242e;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.logout-btn:hover {
+    background: white;
+    color: #ff6847;
+}
+
+/* ===== FEEDBACK BAR ===== */
+
+.feedback-bar {
+    background: white;
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+    min-height: 50px;
+    display: none;
+    align-items: center;
+    font-weight: 600;
+    transition: all 0.3s;
+    position: fixed;
+}
+
+.feedback-bar.show {
+    display: flex;
+}
+
+.feedback-bar.info {
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    color: #1976d2;
+}
+
+.feedback-bar.success {
+    background: #e8f5e9;
+    border-left: 4px solid #4caf50;
+    color: #388e3c;
+}
+
+.feedback-bar.warning {
+    background: #fff3e0;
+    border-left: 4px solid #ff9800;
+    color: #f57c00;
+}
+
+.feedback-bar.error {
+    background: #ffebee;
+    border-left: 4px solid #f44336;
+    color: #c62828;
+}
+
+/* ===== CARDS ===== */
+
+.card {
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    margin-bottom: 25px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+}
+
+.card h2 {
+    color: #1f242e;
+    margin-bottom: 20px;
+    font-size: 1.5em;
+}
+
+.card h3 {
+    color: #333;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+}
+
+/* ===== STATUS ===== */
+
+.status-section {
+    display: grid;
+    gap: 15px;
+}
+
+.status-item {
+    background: #f0f4ff;
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #ff6847;
+}
+
+.status-item strong {
+    display: inline-block;
+    min-width: 120px;
+}
+
+.mode-badge {
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 15px;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.mode-badge.AUTO {
+    background: #4caf50;
+    color: white;
+}
+
+.mode-badge.MANUAL {
+    background: #ff6847;
+    color: white;
+}
+
+/* ===== TEMPERATURE ===== */
+
+.temp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.temp-box {
+    background: #1f242e;
+    color: white;
+    padding: 25px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.temp-label {
+    opacity: 0.9;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+}
+
+.temp-value {
+    font-size: 2.5em;
+    font-weight: bold;
+}
+
+/* ===== CONTROLS ===== */
+
+.btn {
+    padding: 18px;
+    font-size: 1.1em;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    color: #333;
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-auto {
+    background: #e3f5e5;
+    border-color: #4caf50;
+}
+
+.btn-manual {
+    background: #ffece7;
+    border-color: #ff6847;
+}
+
+.btn-open {
+    background: #e3f2fd;
+    color: #1976d2;
+    min-width: 49%;
+    flex-grow: 1;
+}
+
+.btn-close {
+    background: #ffebee;
+    color: #ff6847;
+    min-width: 49%;
+    flex-grow: 1;
+}
+
+/* ===== PARTIAL OPENING BUTTONS ===== */
+
+.partial-buttons {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-partial {
+    padding: 12px;
+    background: #ff6847;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-partial:hover {
+    background: #ff6847;
+    transform: translateY(-2px);
+}
+
+/* ===== MOTOR GRID ===== */
+
+.motor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.motor-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid #e0e0e0;
+}
+
+.motor-card h3 {
+    text-align: center;
+    margin-bottom: 15px;
+    color: #667eea;
+}
+
+/* ===== POSITION DISPLAY ===== */
+
+.position-display {
+    margin: 15px 0;
+    text-align: center;
+}
+
+.position-bar {
+    width: 100%;
+    height: 24px;
+    background: #e0e0e0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.position-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50 0%, #8bc34a 100%);
+    transition: width 0.5s ease;
+}
+
+.position-text {
+    font-weight: bold;
+    color: #667eea;
+    font-size: 1.1em;
+}
+
+.motor-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.btn-motor {
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: white;
+    transition: all 0.2s;
+}
+
+.btn-motor-open {
+    background: #4caf50;
+}
+
+.btn-motor-open:hover {
+    background: #45a049;
+}
+
+.btn-motor-close {
+    background: #f44336;
+}
+
+.btn-motor-close:hover {
+    background: #da190b;
+}
+
+.motor-partial {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.btn-partial-small {
+    padding: 8px 4px;
+    background: #aab0bc;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-partial-small:hover {
+    background: #8c93a0;
+    transform: scale(1.05);
+}
+
+/* ===== VENTILATION MODE ===== */
+
+.ventilation-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 34px;
+    min-width: 60px;
+}
+
+.ventilation-text {
+    text-align: center;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked+.slider {
+    background-color: #4caf50;
+}
+
+input:checked+.slider:before {
+    transform: translateX(26px);
+}
+
+/* ===== FOOTER ===== */
+
+.footer {
+    text-align: center;
+    color: #666;
+    margin-top: 20px;
+    opacity: 0.8;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+    .temp-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .header h1 {
+        font-size: 1.5em;
+    }
+
+    .motor-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .partial-buttons {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 5px;
+    }
+}
+
+/* ===== Steuerelemente Layout ===== */
+
+.controls {
+    display: grid;
+    grid-template-areas: "toggle" "temp" "buttons";
+    gap: 20px;
+    align-items: center;
+}
+
+.auto-toggle-container .global-mode-toggle {
+    margin-bottom: 0px;
+    grid-area: toggle;
+    /* Weist den Toggle-Container dem 'toggle'-Bereich zu */
+    justify-self: center;
+    /* Richtet den Schalter rechts in seiner Zelle aus */
+}
+
+.controls .button-group {
+    grid-area: buttons;
+    /* Weist die Buttons dem 'buttons'-Bereich zu (über beide Spalten) */
+    display: flex;
+    flex-wrap: wrap;
+    /* Erlaubt Umbruch auf kleinen Bildschirmen */
+    gap: 10px;
+    justify-content: center;
+    /* Zentriert die Buttons in der Gruppe */
+}
+
+/* ===== NEU: Styling für das Temperatur-Eingabefeld ===== */
+
+.temp-input-container {
+    grid-area: temp;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    background: #f0f4ff;
+    padding: 10px;
+    border-radius: 10px;
+    border: 2px solid #aec3fb;
+}
+
+.temp-input-container label {
+    font-weight: 600;
+    color: #333;
+}
+
+.temp-input {
+    width: 80px;
+    /* Feste Breite für das Eingabefeld */
+    padding: 10px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: bold;
+    text-align: center;
+    color: #1f242e;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.temp-input:focus {
+    outline: none;
+    border-color: #ff6847;
+    /* Hebt die Umrandung bei Fokus hervor */
+    box-shadow: 0 0 0 3px rgba(255, 104, 71, 0.2);
+    /* Fügt einen sanften Schein hinzu */
+}
+
+/* ===== LOGO STYLES ===== */
+.logo {
+    height: 1.2em;
+    width: auto;
+    vertical-align: middle;
+    margin-right: 10px;
+    border-radius: 4px;
+}
+
+.login-card h1 .logo {
+    height: 1.8em;
+    margin-right: 15px;
+}
