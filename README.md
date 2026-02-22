@@ -65,4 +65,4 @@ scp .\greenhouse_api_client.py luz@luzPi.local:/home/luz/greenhouse/
 *   **API**: Die Kommunikation ist durch `X-API-Key` Header und URL-Parameter gesichert.
 
 ---
-*Ein Projekt des Luzernenhof (Gärtnerhof Belchenblick).*
+*Ein Projekt des Luzernenhof (die beste Solawi der Welt).*
