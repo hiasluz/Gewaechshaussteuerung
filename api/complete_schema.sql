@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS gate_status (
     id INT PRIMARY KEY AUTO_INCREMENT,
     motor_name VARCHAR(50) NOT NULL UNIQUE COMMENT 'Motor-Bezeichnung (z.B. GH1_VORNE)',
     position INT DEFAULT 0 COMMENT 'Aktuelle Position in % (0-100)',
+    enabled TINYINT(1) DEFAULT 1 COMMENT '1 = aktiviert, 0 = Wintermodus',
     last_command VARCHAR(50) DEFAULT NULL COMMENT 'Letzter Befehl',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY motor_name (motor_name)

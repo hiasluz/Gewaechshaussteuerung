@@ -890,7 +890,7 @@ function getGateStatus() {
  * POST /api/gate-status - Tor-Position aktualisieren
  */
 function updateGateStatus() {
-    $input = getJSONInput();
+    $input = json_decode(file_get_contents('php://input'), true);
     
     if (!isset($input['motor_name']) || !isset($input['position'])) {
         sendJSON(['error' => 'Missing motor_name or position'], 400);

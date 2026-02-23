@@ -470,10 +470,10 @@ def execute_command(cmd):
     try:
         # Globale Befehle
         if command == 'OPEN_ALL':
-            gh_system.run_sequence('OPEN')
+            gh_system.run_sequence('OPEN', get_gate_enabled_settings())
         
         elif command == 'CLOSE_ALL':
-            gh_system.run_sequence('CLOSE')
+            gh_system.run_sequence('CLOSE', get_gate_enabled_settings())
         
         elif command == 'SET_MODE':
             if parameters and 'mode' in parameters:
@@ -491,8 +491,9 @@ def execute_command(cmd):
         # Globale Teilöffnung: PARTIAL_20, PARTIAL_40, etc.
         elif command.startswith('PARTIAL_') and command.count('_') == 1:
             percentage = int(command.split('_')[1])
-            gh_system.run_sequence_partial('OPEN', percentage)
-            log('INFO', f"Alle Tore {percentage}% geöffnet")
+            enabled_settings = get_gate_enabled_settings()
+            gh_system.run_sequence_partial('OPEN', percentage, enabled_settings)
+            log('INFO', f"Alle aktiven Tore {percentage}% geöffnet")
         
         # Einzelmotor-Steuerung: OPEN_GH1_VORNE, CLOSE_GH2_HINTEN, etc.
         elif command.startswith('OPEN_GH') and command.count('_') == 2:

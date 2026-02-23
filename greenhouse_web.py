@@ -483,10 +483,19 @@ class GreenhouseSystem:
         # In DB speichern
         self._save_gate_position_to_db(motor_name, target_position)
 
-    def run_sequence_partial(self, command, percentage):
-        """Führt Befehl für alle Motoren teilweise PARALLEL aus"""
+    def run_sequence_partial(self, command, percentage, gate_enabled_settings=None):
+        """Führt Befehl für alle (aktiven) Motoren teilweise PARALLEL aus"""
         if self.is_busy:
             return "System ist beschäftigt!"
+            
+        if gate_enabled_settings is None:
+            gate_enabled_settings = {name: True for name in MOTORS.keys()}
+            
+        active_gates = [name for name in MOTORS.keys()
+                        if gate_enabled_settings.get(name, True)]
+        
+        if not active_gates:
+            return "Keine aktiven Tore"
         
         self.is_busy = True
         self.status_text = f"Führe aus: ALLES {command} {percentage}% (parallel)..."
@@ -502,8 +511,8 @@ class GreenhouseSystem:
                 errors.append(f"{motor_name}: {e}")
         
         try:
-            # Start all motors in parallel
-            for name in MOTORS.keys():
+            # Start all active motors in parallel
+            for name in active_gates:
                 thread = threading.Thread(
                     target=motor_wrapper,
                     args=(name,),
@@ -725,9 +734,35 @@ def api_command():
     if gh is None: return jsonify({'error': 'System not initialized'}), 500
     data = request.json
     cmd = data.get('command')
+    params = data.get('parameters', {})
     
-    # Im Hintergrund ausführen
-    threading.Thread(target=gh.run_sequence, args=(cmd,)).start()
+    # Lokale Ausführung (Fallback, wenn nicht über API Client)
+    def bg_task():
+        if cmd == 'OPEN_ALL':
+            gh.run_sequence('OPEN')
+        elif cmd == 'CLOSE_ALL':
+            gh.run_sequence('CLOSE')
+        elif cmd == 'SET_MODE':
+            gh.mode = params.get('mode', gh.mode)
+            if 'temp' in params and params['temp'] is not None:
+                gh.target_temp = float(params['temp'])
+        elif cmd.startswith('PARTIAL_') and cmd.count('_') == 1:
+            percentage = int(cmd.split('_')[1])
+            gh.run_sequence_partial('OPEN', percentage)
+        elif cmd.startswith('OPEN_GH') and cmd.count('_') == 2:
+            motor_name = '_'.join(cmd.split('_')[1:])
+            gh.move_motor(motor_name, 'OPEN')
+        elif cmd.startswith('CLOSE_GH') and cmd.count('_') == 2:
+            motor_name = '_'.join(cmd.split('_')[1:])
+            gh.move_motor(motor_name, 'CLOSE')
+        elif cmd.startswith('PARTIAL_GH') and cmd.count('_') == 3:
+            parts = cmd.split('_')
+            motor_name = f"{parts[1]}_{parts[2]}"
+            target_pos = int(parts[3])
+            placeholder = 'OPEN' if target_pos > gh.gate_positions.get(motor_name, 0) else 'CLOSE'
+            gh.move_motor_partial(motor_name, placeholder, target_pos)
+
+    threading.Thread(target=bg_task).start()
     return jsonify({'ok': True})
 
 @app.route('/api/target', methods=['POST'])
