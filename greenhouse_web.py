@@ -289,8 +289,8 @@ class GreenhouseSystem:
         # In DB speichern
         self._save_gate_position_to_db(motor_name, target_position)
 
-    def run_sequence(self, command):
-        """Führt Befehl für alle Motoren PARALLEL aus"""
+    def run_sequence(self, command, gate_enabled_settings=None):
+        """Führt Befehl für alle (aktiven) Motoren PARALLEL aus"""
         if self.is_busy:
             return "System ist beschäftigt!"
         
@@ -300,6 +300,18 @@ class GreenhouseSystem:
         threads = []
         errors = []
         
+        # Deaktivierte Tore (Wintermodus) überspringen
+        if gate_enabled_settings is None:
+            gate_enabled_settings = {name: True for name in MOTORS.keys()}
+        
+        active_gates = [name for name in MOTORS.keys()
+                        if gate_enabled_settings.get(name, True)]
+        
+        if not active_gates:
+            self.status_text = "Keine aktiven Tore"
+            self.is_busy = False
+            return "Keine aktiven Tore"
+        
         def motor_wrapper(motor_name):
             """Wrapper to catch exceptions in threads"""
             try:
@@ -308,8 +320,8 @@ class GreenhouseSystem:
                 errors.append(f"{motor_name}: {e}")
         
         try:
-            # Start all motors in parallel
-            for name in MOTORS.keys():
+            # Start all active motors in parallel
+            for name in active_gates:
                 thread = threading.Thread(
                     target=motor_wrapper,
                     args=(name,),
@@ -339,20 +351,24 @@ class GreenhouseSystem:
         finally:
             self.is_busy = False
     
-    def run_sequence_auto(self, command, gate_auto_settings=None):
-        """Führt Befehl nur für Motoren mit Auto=ON PARALLEL aus"""
+    def run_sequence_auto(self, command, gate_auto_settings=None, gate_enabled_settings=None):
+        """Führt Befehl nur für Motoren mit Auto=ON und Enabled=AN PARALLEL aus"""
         if self.is_busy:
             return "System ist beschäftigt!"
         
-        # Wenn keine Settings übergeben, alle Tore steuern (Fallback)
+        # Defaults
         if gate_auto_settings is None:
             gate_auto_settings = {name: True for name in MOTORS.keys()}
+        if gate_enabled_settings is None:
+            gate_enabled_settings = {name: True for name in MOTORS.keys()}
         
         self.is_busy = True
         
-        # Filtere nur Tore mit Auto=ON
-        auto_enabled_gates = [name for name in MOTORS.keys() 
-                             if gate_auto_settings.get(name, True)]
+        # Filtere: Tor muss Auto=ON und Enabled=AN sein
+        auto_enabled_gates = [
+            name for name in MOTORS.keys()
+            if gate_auto_settings.get(name, True) and gate_enabled_settings.get(name, True)
+        ]
         
         if not auto_enabled_gates:
             self.status_text = "Keine Tore im Auto-Modus"
@@ -517,28 +533,36 @@ class GreenhouseSystem:
         finally:
             self.is_busy = False
 
-    def check_auto_logic(self, gate_auto_settings=None):
+    def check_auto_logic(self, gate_auto_settings=None, gate_enabled_settings=None):
         """Automatik-Regelung mit stufenweiser Anpassung (5%-Schritte).
         
         Läuft wenn:
         - Gesamt-Modus = AUTO (alle Tore die nicht explizit auf MANUAL stehen), ODER
         - Einzelne Tore auf AUTO gesetzt sind (auch bei globalem MANUAL-Modus)
+        Deaktivierte Tore (Wintermodus) werden in beiden Fällen ignoriert.
         """
         # Wenn keine Gate-Settings, Fallback auf Gesamt-Modus
         if gate_auto_settings is None:
             gate_auto_settings = {name: True for name in MOTORS.keys()}
+        if gate_enabled_settings is None:
+            gate_enabled_settings = {name: True for name in MOTORS.keys()}
         
         # Ermittle welche Tore im AUTO-Modus sind:
         # Wenn Gesamt-Modus = AUTO: alle Tore die nicht explizit auf False gesetzt sind
         # Wenn Gesamt-Modus = MANUAL: nur die Tore die explizit auf True gesetzt sind
+        # In beiden Fällen: deaktivierte Tore (Wintermodus) rausfiltern
         if self.mode == "AUTO":
-            # Globales AUTO: alle Tore die nicht deaktiviert wurden steuern
-            auto_enabled_gates = [name for name in MOTORS.keys()
-                                 if gate_auto_settings.get(name, True)]
+            auto_enabled_gates = [
+                name for name in MOTORS.keys()
+                if gate_auto_settings.get(name, True)
+                and gate_enabled_settings.get(name, True)
+            ]
         else:
-            # Globales MANUAL: nur Tore mit explizit aktiviertem Auto-Modus
-            auto_enabled_gates = [name for name in MOTORS.keys()
-                                 if gate_auto_settings.get(name, False)]
+            auto_enabled_gates = [
+                name for name in MOTORS.keys()
+                if gate_auto_settings.get(name, False)
+                and gate_enabled_settings.get(name, True)
+            ]
         
         if not auto_enabled_gates:
             # Kein Tor im Auto-Modus → nichts tun
@@ -789,7 +813,19 @@ def auto_loop():
                 except Exception:
                     gate_settings = None
                 
-                gh.check_auto_logic(gate_settings)
+                # Auch Gate Enabled Status (Wintermodus) laden
+                try:
+                    enabled_resp = requests.get(
+                        f"{API_URL}/gate-enabled",
+                        params={'api_key': API_KEY},
+                        headers={'X-API-Key': API_KEY},
+                        timeout=5
+                    )
+                    gate_enabled = enabled_resp.json() if enabled_resp.status_code == 200 else None
+                except Exception:
+                    gate_enabled = None
+                
+                gh.check_auto_logic(gate_settings, gate_enabled)
         except Exception as e:
             print(f"Auto-Loop Fehler: {e}")
         time.sleep(300)  # Alle 5 Minuten

@@ -309,6 +309,10 @@ gate_auto_cache = {}
 gate_auto_cache_time = None
 GATE_AUTO_CACHE_DURATION = 10  # 10 Sekunden
 
+# Cache für Gate Enabled Status (Wintermodus)
+gate_enabled_cache = {}
+gate_enabled_cache_time = None
+
 def get_gate_auto_settings():
     """Holt Gate Auto-Mode Einstellungen von der API (mit Caching)"""
     global gate_auto_cache, gate_auto_cache_time
@@ -341,6 +345,34 @@ def get_gate_auto_settings():
         }
     
     return gate_auto_cache
+
+def get_gate_enabled_settings():
+    """Holt Gate Enabled Status (Wintermodus) von der API (mit Caching)"""
+    global gate_enabled_cache, gate_enabled_cache_time
+    
+    now = datetime.now()
+    if gate_enabled_cache_time and (now - gate_enabled_cache_time).total_seconds() < GATE_AUTO_CACHE_DURATION:
+        return gate_enabled_cache
+    
+    try:
+        settings = make_request('GET', 'gate-enabled')
+        if settings:
+            gate_enabled_cache = settings
+            gate_enabled_cache_time = now
+            log('DEBUG', f"Gate Enabled Status aktualisiert: {settings}")
+            return settings
+    except Exception as e:
+        log('WARNING', f"Konnte Gate Enabled Status nicht abrufen: {e}")
+    
+    # Fallback: Alle Tore aktiv
+    if not gate_enabled_cache:
+        gate_enabled_cache = {
+            'GH1_VORNE': True, 'GH1_HINTEN': True,
+            'GH2_VORNE': True, 'GH2_HINTEN': True,
+            'GH3_VORNE': True, 'GH3_HINTEN': True
+        }
+    
+    return gate_enabled_cache
 
 # ===== SMART POLLING =====
 
@@ -465,11 +497,17 @@ def execute_command(cmd):
         # Einzelmotor-Steuerung: OPEN_GH1_VORNE, CLOSE_GH2_HINTEN, etc.
         elif command.startswith('OPEN_GH') and command.count('_') == 2:
             motor_name = '_'.join(command.split('_')[1:])  # z.B. GH1_VORNE
+            enabled = get_gate_enabled_settings().get(motor_name, True)
+            if not enabled:
+                raise ValueError(f"Tor {motor_name} ist deaktiviert (Wintermodus)")
             gh_system.move_motor(motor_name, 'OPEN')
             log('INFO', f"Motor {motor_name} geöffnet")
         
         elif command.startswith('CLOSE_GH') and command.count('_') == 2:
             motor_name = '_'.join(command.split('_')[1:])
+            enabled = get_gate_enabled_settings().get(motor_name, True)
+            if not enabled:
+                raise ValueError(f"Tor {motor_name} ist deaktiviert (Wintermodus)")
             gh_system.move_motor(motor_name, 'CLOSE')
             log('INFO', f"Motor {motor_name} geschlossen")
         
@@ -478,6 +516,9 @@ def execute_command(cmd):
         elif command.startswith('PARTIAL_GH') and command.count('_') == 3:
             parts = command.split('_')
             motor_name = f"{parts[1]}_{parts[2]}"  # GH1_VORNE
+            enabled = get_gate_enabled_settings().get(motor_name, True)
+            if not enabled:
+                raise ValueError(f"Tor {motor_name} ist deaktiviert (Wintermodus)")
             target_position = int(parts[3])  # Zielposition (0-100%)
             
             # Aktuelle Position holen
@@ -599,9 +640,10 @@ def main():
             send_status()
             
             # Automatik-Logik (falls aktiviert)
-            # Hole Gate Auto Settings und übergebe an check_auto_logic
+            # Hole Gate Auto Settings und Gate Enabled Status
             gate_settings = get_gate_auto_settings()
-            gh_system.check_auto_logic(gate_settings)
+            gate_enabled = get_gate_enabled_settings()
+            gh_system.check_auto_logic(gate_settings, gate_enabled)
             
             # Ventilation prüfen und ausführen
             check_ventilation()

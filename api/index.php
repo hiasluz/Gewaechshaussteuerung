@@ -136,6 +136,19 @@ try {
             }
             break;
         
+        // ===== GATE ENABLED (Wintermodus) =====
+        
+        case 'gate-enabled':
+            if ($method === 'GET') {
+                getGateEnabled();
+            } elseif ($method === 'POST') {
+                if (!isLoggedIn()) validateApiKey();
+                updateGateEnabled();
+            } else {
+                sendJSON(['error' => 'Method not allowed'], 405);
+            }
+            break;
+        
         // ===== GPIO SWITCHES =====
         
         case 'gate-status':
@@ -263,8 +276,21 @@ function getStatus() {
     
     // Gate Auto Mode holen
     $stmt = $db->query('SELECT motor_name, auto_enabled FROM gate_auto_mode');
-    $autoMode = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    $autoModeRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $autoMode = [];
+    foreach ($autoModeRows as $row) {
+        $autoMode[$row['motor_name']] = (bool)(int)$row['auto_enabled'];
+    }
     $status['gate_auto_mode'] = $autoMode ?: [];
+    
+    // Gate Enabled (Wintermodus) holen
+    $stmt = $db->query('SELECT motor_name, enabled FROM gate_status');
+    $enabledRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $gateEnabled = [];
+    foreach ($enabledRows as $row) {
+        $gateEnabled[$row['motor_name']] = (bool)(int)$row['enabled'];
+    }
+    $status['gate_enabled'] = $gateEnabled;
     
     sendJSON($status);
 }
@@ -569,6 +595,60 @@ function getGateAutoMode() {
     }
     
     sendJSON($settings);
+}
+
+/**
+ * GET /api/gate-enabled - Gate Enabled Status abrufen (Wintermodus)
+ */
+function getGateEnabled() {
+    $db = getDB();
+    $stmt = $db->query('SELECT motor_name, enabled FROM gate_status ORDER BY motor_name');
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $settings = [];
+    foreach ($rows as $row) {
+        $settings[$row['motor_name']] = (bool)(int)$row['enabled'];
+    }
+    
+    // Defaults falls Tabelle leer
+    if (empty($settings)) {
+        $settings = [
+            'GH1_VORNE'  => true, 'GH1_HINTEN' => true,
+            'GH2_VORNE'  => true, 'GH2_HINTEN' => true,
+            'GH3_VORNE'  => true, 'GH3_HINTEN' => true
+        ];
+    }
+    
+    sendJSON($settings);
+}
+
+/**
+ * POST /api/gate-enabled - Tor aktivieren/deaktivieren (Wintermodus)
+ */
+function updateGateEnabled() {
+    $input = json_decode(file_get_contents('php://input'), true);
+    
+    if (!isset($input['motor_name'])) {
+        sendJSON(['error' => 'motor_name required'], 400);
+    }
+    
+    $db = getDB();
+    $enabled = isset($input['enabled']) ? (int)(bool)$input['enabled'] : 1;
+    
+    $stmt = $db->prepare('
+        UPDATE gate_status
+        SET enabled = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE motor_name = ?
+    ');
+    $stmt->execute([$enabled, $input['motor_name']]);
+    
+    if ($stmt->rowCount() === 0) {
+        sendJSON(['error' => 'Motor not found'], 404);
+    }
+    
+    $label = $enabled ? 'aktiviert' : 'deaktiviert (Wintermodus)';
+    logMessage('INFO', "Tor {$input['motor_name']} $label");
+    sendJSON(['success' => true]);
 }
 
 /**
