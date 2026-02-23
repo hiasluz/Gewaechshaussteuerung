@@ -58,7 +58,7 @@ function loadSettings() {
 }
 
 function saveSettings() {
-    if (!confirm('Einstellungen speichern und Service neu starten?\nDie neuen Werte werden sofort übernommen.')) return;
+
     
     const settings = {
         DEFAULT_TARGET_TEMP: parseFloat(document.getElementById('set-target-temp').value),
@@ -81,10 +81,10 @@ function saveSettings() {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                showFeedback('✅ Einstellungen gespeichert! Service wird neu gestartet...', 'success', 8000);
+                showFeedback('✅ Einstellungen gespeichert — Pi lädt neue Werte...', 'success', 8000);
                 toggleSettings();
                 
-                // Service neu starten, damit Pi die neuen Werte lädt
+                // RESTART-Befehl senden, damit Pi-Client die neuen Werte sofort lädt
                 restartService();
             } else {
                 showFeedback('❌ Fehler: ' + (data.error || 'Unbekannter Fehler'), 'error');
@@ -101,21 +101,19 @@ function restartService() {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                showFeedback('✅ Service neu gestartet — neue Einstellungen aktiv!', 'success', 6000);
+                showFeedback('✅ Pi-Client hat neue Einstellungen geladen!', 'success', 6000);
                 // Nach kurzer Wartezeit Status aktualisieren
                 setTimeout(() => updateStatus(), 5000);
             } else {
-                showFeedback('⚠️ Einstellungen gespeichert, aber Service-Neustart fehlgeschlagen: ' + (data.error || ''), 'error', 10000);
+                showFeedback('⚠️ Einstellungen gespeichert, aber Pi-Client konnte nicht neu laden: ' + (data.error || ''), 'error', 10000);
             }
         })
         .catch(err => {
             console.error('Service restart error:', err);
-            showFeedback('⚠️ Einstellungen gespeichert, aber Service-Neustart fehlgeschlagen.', 'error', 10000);
+            showFeedback('⚠️ Einstellungen gespeichert, aber Pi-Client konnte nicht neu laden.', 'error', 10000);
         });
 }
 
 function cancelSettings() {
-    if (confirm('Änderungen verwerfen?')) {
-        toggleSettings();
-    }
+    toggleSettings();
 }

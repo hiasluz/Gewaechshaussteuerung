@@ -518,8 +518,30 @@ class GreenhouseSystem:
             self.is_busy = False
 
     def check_auto_logic(self, gate_auto_settings=None):
-        """Automatik-Regelung mit stufenweiser Anpassung (5%-Schritte)"""
-        if self.mode != "AUTO":
+        """Automatik-Regelung mit stufenweiser Anpassung (5%-Schritte).
+        
+        Läuft wenn:
+        - Gesamt-Modus = AUTO (alle Tore die nicht explizit auf MANUAL stehen), ODER
+        - Einzelne Tore auf AUTO gesetzt sind (auch bei globalem MANUAL-Modus)
+        """
+        # Wenn keine Gate-Settings, Fallback auf Gesamt-Modus
+        if gate_auto_settings is None:
+            gate_auto_settings = {name: True for name in MOTORS.keys()}
+        
+        # Ermittle welche Tore im AUTO-Modus sind:
+        # Wenn Gesamt-Modus = AUTO: alle Tore die nicht explizit auf False gesetzt sind
+        # Wenn Gesamt-Modus = MANUAL: nur die Tore die explizit auf True gesetzt sind
+        if self.mode == "AUTO":
+            # Globales AUTO: alle Tore die nicht deaktiviert wurden steuern
+            auto_enabled_gates = [name for name in MOTORS.keys()
+                                 if gate_auto_settings.get(name, True)]
+        else:
+            # Globales MANUAL: nur Tore mit explizit aktiviertem Auto-Modus
+            auto_enabled_gates = [name for name in MOTORS.keys()
+                                 if gate_auto_settings.get(name, False)]
+        
+        if not auto_enabled_gates:
+            # Kein Tor im Auto-Modus → nichts tun
             return
         
         temp_in = self.get_temp_in()
@@ -544,7 +566,7 @@ class GreenhouseSystem:
             direction = "CLOSE"
         else:
             # Im Toleranzbereich → Nichts tun
-            print(f"🌡 AUTO: {temp_in}°C im Toleranzbereich ({self.target_temp - self.temp_hysteresis}°C - {self.target_temp + self.temp_hysteresis}°C)")
+            print(f"🌡 AUTO: {temp_in}°C im Toleranzbereich ({self.target_temp - self.temp_hysteresis}°C - {self.target_temp + self.temp_hysteresis}°C) [{len(auto_enabled_gates)} Tor/e im Auto-Modus]")
             return
         
         # Berechne Multiplikator basierend auf Außentemperatur-Differenz
@@ -564,15 +586,7 @@ class GreenhouseSystem:
         # Finale Schrittgröße
         step_size = base_step * multiplier
         
-        # Hole aktuelle durchschnittliche Position aller Auto-Tore
-        if gate_auto_settings is None:
-            gate_auto_settings = {name: True for name in MOTORS.keys()}
-        
-        auto_enabled_gates = [name for name in MOTORS.keys() 
-                             if gate_auto_settings.get(name, True)]
-        
-        if not auto_enabled_gates:
-            return
+        # auto_enabled_gates wurde bereits oben berechnet und ist nicht leer
         
         # Berechne durchschnittliche Position
         avg_position = sum(self.gate_positions.get(name, 0) for name in auto_enabled_gates) / len(auto_enabled_gates)
@@ -758,10 +772,24 @@ def api_restart_service():
 
 # --- AUTO-LOOP (Hintergrund) ---
 def auto_loop():
+    """Hintergrund-Loop für die Automatik (nur aktiv wenn greenhouse_web.py direkt gestartet wird).
+    Im API-Client-Betrieb übernimmt greenhouse_api_client.py die Steuerung."""
     while True:
         try:
             if gh:
-                gh.check_auto_logic()
+                # Gate Auto Settings von API laden
+                try:
+                    gate_resp = requests.get(
+                        f"{API_URL}/gate-auto-mode",
+                        params={'api_key': API_KEY},
+                        headers={'X-API-Key': API_KEY},
+                        timeout=5
+                    )
+                    gate_settings = gate_resp.json() if gate_resp.status_code == 200 else None
+                except Exception:
+                    gate_settings = None
+                
+                gh.check_auto_logic(gate_settings)
         except Exception as e:
             print(f"Auto-Loop Fehler: {e}")
         time.sleep(300)  # Alle 5 Minuten

@@ -546,10 +546,10 @@ function markVentilationRun() {
 function getGateAutoMode() {
     $db = getDB();
     $stmt = $db->query('SELECT motor_name, auto_enabled FROM gate_auto_mode');
-    $settings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // Falls Tabelle leer, Defaults zurückgeben
-    if (empty($settings)) {
+    if (empty($rows)) {
         $settings = [
             'GH1_VORNE' => true,
             'GH1_HINTEN' => true,
@@ -558,6 +558,14 @@ function getGateAutoMode() {
             'GH3_VORNE' => true,
             'GH3_HINTEN' => true
         ];
+    } else {
+        // WICHTIG: auto_enabled als echten Boolean casten!
+        // PDO::FETCH_KEY_PAIR gibt Strings zurück ("0"/"1").
+        // In Python ist der String "0" truthy → Tor würde fälschlicherweise als AUTO erkannt.
+        $settings = [];
+        foreach ($rows as $row) {
+            $settings[$row['motor_name']] = (bool)(int)$row['auto_enabled'];
+        }
     }
     
     sendJSON($settings);
