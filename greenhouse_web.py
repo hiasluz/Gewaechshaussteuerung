@@ -553,11 +553,21 @@ class GreenhouseSystem:
 
     def check_auto_logic(self, gate_auto_settings=None, gate_enabled_settings=None):
         """Automatik-Regelung mit stufenweiser Anpassung (5%-Schritte).
-        
-        Läuft wenn:
-        - Gesamt-Modus = AUTO (alle Tore die nicht explizit auf MANUAL stehen), ODER
-        - Einzelne Tore auf AUTO gesetzt sind (auch bei globalem MANUAL-Modus)
-        Deaktivierte Tore (Wintermodus) werden in beiden Fällen ignoriert.
+
+        Zusammenspiel von globalem Modus und tor-spezifischer Automatik:
+        ─────────────────────────────────────────────────────────────────
+        | Globaler Modus | Tor-AUTO | Tor-Enabled | Tor wird bewegt? |
+        |----------------|----------|-------------|------------------|
+        | AUTO           | an       | an          | JA               |
+        | AUTO           | aus      | an          | NEIN (manuell)   |
+        | MANUAL         | an       | an          | JA               |  ← Tor hat eigene Automatik
+        | MANUAL         | aus      | an          | NEIN             |
+        | AUTO oder MANUAL | beliebig | aus        | NEIN (Wintermodus)|
+        ─────────────────────────────────────────────────────────────────
+        Ein Tor mit ausgeschaltetem Tor-AUTO-Schalter bleibt also auch bei
+        globalem AUTO aus der Automatik heraus und reagiert nur auf manuelle
+        Befehle. Umgekehrt kann ein Tor bei globalem MANUAL trotzdem automatisch
+        gesteuert werden, wenn sein individueller AUTO-Schalter aktiviert ist.
         """
         # Wenn keine Gate-Settings, Fallback auf Gesamt-Modus
         if gate_auto_settings is None:

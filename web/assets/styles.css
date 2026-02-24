@@ -574,7 +574,7 @@ input:checked+.slider:before {
 
 .controls {
     display: grid;
-    grid-template-areas: "toggle" "temp" "buttons";
+    grid-template-areas: "toggle" "buttons" "temp";
     gap: 20px;
     align-items: center;
 }
@@ -596,6 +596,19 @@ input:checked+.slider:before {
     gap: 10px;
     justify-content: center;
     /* Zentriert die Buttons in der Gruppe */
+}
+
+.target-temp-display {
+    grid-area: temp;
+    margin: 0;
+    font-size: 0.95rem;
+    color: #555;
+    text-align: center;
+}
+
+.target-temp-display span {
+    font-weight: 600;
+    color: #333;
 }
 
 /* ===== NEU: Styling für das Temperatur-Eingabefeld ===== */

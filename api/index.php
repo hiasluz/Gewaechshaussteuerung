@@ -292,6 +292,11 @@ function getStatus() {
     }
     $status['gate_enabled'] = $gateEnabled;
     
+    // Zieltemperatur für Automatik (read-only Anzeige im Frontend)
+    $stmt = $db->query("SELECT setting_value FROM system_settings WHERE setting_key = 'DEFAULT_TARGET_TEMP' LIMIT 1");
+    $row = $stmt->fetch();
+    $status['target_temp'] = $row ? (float)$row['setting_value'] : 24.0;
+    
     sendJSON($status);
 }
 

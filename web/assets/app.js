@@ -170,16 +170,12 @@ async function updateStatus() {
         modeBadge.textContent = data.mode || 'MANUAL';
         modeBadge.className = `mode-badge ${data.mode || 'MANUAL'}`;
         
-        // NEU: Temperatur-Eingabefeld nur im AUTO-Modus anzeigen
-        const tempInputContainer = document.querySelector('.temp-input-container');
-        if (tempInputContainer) {
-            tempInputContainer.style.display = (data.mode === 'AUTO') ? 'flex' : 'none';
-            // Wende die Sperre auch hier an, um ein Flackern zu verhindern
-            if (!isModeToggleLocked) {
-                tempInputContainer.style.display = (data.mode === 'AUTO') ? 'flex' : 'none';
-            }
+        // Zieltemperatur (read-only, wird unter „Erweiterte Einstellungen" geändert)
+        const targetTempEl = document.getElementById('target-temp-value');
+        if (targetTempEl) {
+            targetTempEl.textContent = data.target_temp != null ? data.target_temp.toFixed(1) : '---';
         }
-
+        
         // Busy-State zuerst definieren
         const isBusy = data.is_busy === true || data.is_busy === 1;
 
@@ -335,20 +331,9 @@ function handleModeToggle(checkbox) {
     const isChecked = checkbox.checked;
     const newMode = isChecked ? 'AUTO' : 'MANUAL';
 
-    // NEU: Temperatur-Eingabefeld sofort ein-/ausblenden für direktes Feedback
-    const tempInputContainer = document.querySelector('.temp-input-container');
-    if (tempInputContainer) {
-        tempInputContainer.style.display = (newMode === 'AUTO') ? 'flex' : 'none';
-    }
-
-    // Parameter-Objekt erstellen
+    // Sende nur den Modus; die Zieltemperatur wird ausschließlich über
+    // „Erweiterte Einstellungen" (/api/settings) konfiguriert.
     const parameters = { mode: newMode };
-
-    // NEU: Wenn auf AUTO geschaltet wird, die Ziel-Temperatur mitsenden
-    if (newMode === 'AUTO') {
-        const targetTemp = document.getElementById('target-temp-input').value;
-        parameters.temp = parseFloat(targetTemp);
-    }
 
     // Sende den spezifischen SET_MODE Befehl
     sendCommand('SET_MODE', parameters);

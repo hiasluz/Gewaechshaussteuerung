@@ -82,17 +82,13 @@
                     </label>
                     <span class="auto-toggle-label">Automatik</span>
                 </div>
-                <!-- NEU: Eingabefeld für die Ziel-Temperatur -->
-                <div class="temp-input-container">
-                    <label for="target-temp-input">Ziel-Temp (°C):</label>
-                    <input type="number" id="target-temp-input" value="24.0" step="0.5" class="temp-input">
-                </div>
                 <div class="button-group">
                     <button class="btn btn-open" id="btn-open" onclick="sendCommand('OPEN_ALL')">🔼 Alles
                         ÖFFNEN</button>
                     <button class="btn btn-close" id="btn-close" onclick="sendCommand('CLOSE_ALL')">🔽 Alles
                         SCHLIESSEN</button>
                 </div>
+                <p class="target-temp-display" id="target-temp-display">Zieltemperatur: <span id="target-temp-value">---</span>°C</p>
             </div>
 
             <!-- Global Partial Opening -->
@@ -107,6 +103,16 @@
         </div>
 
         <!-- Individual Motor Controls -->
+        <!--
+            Logik der Schalter:
+            • AN/AUS (Enabled): Deaktiviert ein Tor komplett (Wintermodus).
+              Deaktivierte Tore werden WEDER manuell noch automatisch bewegt.
+            • Auto: Steuert, ob dieses Tor im automatischen Temperatur-Loop berücksichtigt wird.
+              – Bei globalem AUTO + Tor-Auto AN  → Tor folgt der Automatik.
+              – Bei globalem AUTO + Tor-Auto AUS → Tor muss manuell gesteuert werden.
+              – Bei globalem MANUAL + Tor-Auto AN → Tor folgt trotzdem der Automatik.
+              Die Zieltemperatur wird ausschließlich unter „Erweiterte Einstellungen" konfiguriert.
+        -->
         <div class="card">
             <h2>🎛️ Einzelsteuerung</h2>
             <div class="motor-grid">

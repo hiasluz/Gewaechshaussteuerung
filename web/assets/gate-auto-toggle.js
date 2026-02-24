@@ -51,8 +51,22 @@ async function toggleGateAuto(motorName, enabled) {
 
 /**
  * Toggle Enabled-Status (Wintermodus) für ein spezifisches Tor
+ * Vor dem Umschalten wird eine Bestätigung eingeholt, um versehentliche
+ * Änderungen zu verhindern.
  */
 async function toggleGateEnabled(motorName, enabled) {
+    const displayName = motorName.replace(/_/g, ' ');
+    const message = enabled
+        ? `Tor "${displayName}" wirklich AKTIVIEREN und wieder in die Steuerlogik aufnehmen?`
+        : `Tor "${displayName}" wirklich DEAKTIVIEREN (Wintermodus)?\nEs wird dann nicht mehr automatisch oder manuell bewegt.`;
+
+    if (!confirm(message)) {
+        // Abbruch: Checkbox sofort auf alten Wert zurücksetzen
+        const checkbox = document.getElementById(`enabled-${motorName}`);
+        if (checkbox) checkbox.checked = !enabled;
+        return;
+    }
+
     try {
         const response = await fetch(`${API_BASE}/gate-enabled`, {
             method: 'POST',
