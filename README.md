@@ -84,5 +84,4 @@ scp .\greenhouse_api_client.py luz@luzPi.local:/home/luz/greenhouse/
 *   **API-Absicherung**: Die Kommunikation zwischen Pi und Server ist durch den `X-API-Key` Header gesichert. Das Web-Frontend nutzt eine Session-basierte Anmeldung (`/api/login`).
 
 ---
-*Ein Projekt des Luzernenhof (die beste Solawi der Welt).*  
-Kontakt: [info@luzernenhof.de](mailto:info@luzernenhof.de)
+*Ein Projekt des Luzernenhof (die beste Solawi der Welt).*
