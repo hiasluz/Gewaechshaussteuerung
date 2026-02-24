@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS gpio_switches (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(50) NOT NULL UNIQUE COMMENT 'Schalter-Name (z.B. "Bewässerung 1")',
     gpio_pin INT NOT NULL COMMENT 'GPIO-Pin-Nummer (BCM)',
-    state TINYINT(1) DEFAULT 0 COMMENT '0 = Aus, 1 = Ein',
+    state TINYINT(1) DEFAULT 0 COMMENT 'Schaltzustand (Active-Low): 0 = EIN/aktiv (GPIO LOW), 1 = AUS/inaktiv (GPIO HIGH)',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-Gewächshaus API Client - Polling-basiert mit Ventilation
-Fragt regelmäßig die REST API ab und führt Befehle aus.
+Gewächshaus API Client - Polling-basiert mit Ventilation.
+
+Dieser Prozess läuft auf dem Raspberry Pi, pollt ausschließlich die zentrale
+PHP-REST-API (`api/index.php` unter `API_URL`) und steuert über das lokal
+importierte `GreenhouseSystem` (aus `greenhouse_web.py`) die GPIO-Pins.
 
 Smart Polling Intervals:
 - 3s nach Befehl (Development Mode)
@@ -61,7 +64,9 @@ LAT_ENV = os.getenv("LATITUDE")
 LON_ENV = os.getenv("LONGITUDE")
 
 if not LAT_ENV or not LON_ENV:
-    log('ERROR', "❌ LATITUDE oder LONGITUDE fehlt in .env!")
+    # `log` ist weiter unten definiert – in diesem sehr frühen Fehlerfall
+    # reicht ein einfacher Konsolenhinweis.
+    print("❌ LATITUDE oder LONGITUDE fehlt in .env!")
     sys.exit(1)
 
 LAT = float(LAT_ENV)
@@ -314,7 +319,11 @@ gate_enabled_cache = {}
 gate_enabled_cache_time = None
 
 def get_gate_auto_settings():
-    """Holt Gate Auto-Mode Einstellungen von der API (mit Caching)"""
+    """Holt Gate Auto-Mode Einstellungen von der API (mit Caching).
+
+    Die PHP-API liefert hier bereits echte Booleans je Motor (siehe `api/index.php`),
+    sodass keine zusätzliche Typkonvertierung im Client nötig ist.
+    """
     global gate_auto_cache, gate_auto_cache_time
     
     # Prüfe ob Cache noch gültig ist
@@ -347,7 +356,11 @@ def get_gate_auto_settings():
     return gate_auto_cache
 
 def get_gate_enabled_settings():
-    """Holt Gate Enabled Status (Wintermodus) von der API (mit Caching)"""
+    """Holt Gate Enabled Status (Wintermodus) von der API (mit Caching).
+
+    Die PHP-API normalisiert `enabled` bereits auf Booleans (pro Motor),
+    der Client übernimmt diese Werte unverändert.
+    """
     global gate_enabled_cache, gate_enabled_cache_time
     
     now = datetime.now()
@@ -552,7 +565,7 @@ def execute_command(cmd):
         
         # Befehl als completed markieren
         make_request('POST', f"command/{cmd_id}/complete")
-        log('INFO', f"Befehl abgeschlossen: {command}")
+        log('INFO', f"Befehl abgeschlossen: {command} (ID: {cmd_id})")
         
         last_command_time = datetime.now()
         

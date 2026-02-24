@@ -1,21 +1,30 @@
 #!/usr/bin/env python3
 
+"""
+GPIO- und Logikmodul für die Gewächshaus-Steuerung auf dem Raspberry Pi.
+
+Diese Datei stellt das `GreenhouseSystem` sowie GPIO-Setup und Sensorzugriff bereit
+und wird ausschließlich vom Polling-Client `greenhouse_api_client.py` importiert.
+
+Alle Web- und REST-APIs werden zentral durch `api/index.php` bedient; dieses Modul
+spricht nur über `API_URL` mit dieser PHP-API und führt keine eigenen HTTP-Routen aus.
+"""
+
 import asyncio
 import threading
 import time
-import requests
+import requests  # pyright: ignore[reportMissingModuleSource]
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # pyright: ignore[reportMissingImports]
 from datetime import datetime
-from flask import Flask, jsonify, request, send_from_directory, redirect
-import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO  # pyright: ignore[reportMissingModuleSource]
 
 # Lade Umgebungsvariablen
 load_dotenv()
 
 # Sensor-Import optional (falls 1-Wire Module nicht geladen)
 try:
-    from w1thermsensor import W1ThermSensor
+    from w1thermsensor import W1ThermSensor  # pyright: ignore[reportMissingImports]
     SENSORS_AVAILABLE = True
 except Exception as e:
     print(f"⚠️  Warnung: Temperatursensoren nicht verfügbar: {e}")
@@ -682,203 +691,17 @@ class GreenhouseSystem:
         finally:
             self.is_busy = False
 
-# System erstellen (Global für Flask-Routen, aber erst in main oder via init instanziiert)
+# System erstellen (globales Singleton für die Motor-/Sensor-Logik)
 gh = None
 
 def init_global_system():
+    """
+    Liefert eine globale `GreenhouseSystem`-Instanz.
+
+    Wird vom Polling-Client `greenhouse_api_client.py` verwendet, um genau ein
+    zentrales Objekt für Motorsteuerung, Sensoren und API-Sync zu teilen.
+    """
     global gh
     if gh is None:
         gh = GreenhouseSystem()
     return gh
-
-
-# --- FLASK WEB-SERVER ---
-app = Flask(__name__)
-
-# HTML_TEMPLATE wurde entfernt - verwende stattdessen web/index.html als Frontend
-
-@app.route('/')
-def index():
-    """Weiterleitung zum Frontend"""
-    return redirect('/web/index.html')
-
-@app.route('/web/<path:filename>')
-def serve_web(filename):
-    """Liefert statische Dateien aus dem web/ Verzeichnis"""
-    import os
-    web_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'web')
-    return send_from_directory(web_dir, filename)
-
-@app.route('/api/status')
-def api_status():
-    if gh is None: return jsonify({'error': 'System not initialized'}), 500
-    return jsonify({
-        'mode': gh.mode,
-        'status': gh.status_text,
-        'last_action': gh.last_action,
-        'temp_in': gh.get_temp_in() or "---",
-        'temp_out': gh.get_temp_out() or "---",
-        'target_temp': gh.target_temp,
-        'is_busy': gh.is_busy
-    })
-
-@app.route('/api/mode', methods=['POST'])
-def api_mode():
-    if gh is None: return jsonify({'error': 'System not initialized'}), 500
-    data = request.json
-    gh.mode = data.get('mode', 'MANUAL')
-    return jsonify({'ok': True})
-
-@app.route('/api/command', methods=['POST'])
-def api_command():
-    if gh is None: return jsonify({'error': 'System not initialized'}), 500
-    data = request.json
-    cmd = data.get('command')
-    params = data.get('parameters', {})
-    
-    # Lokale Ausführung (Fallback, wenn nicht über API Client)
-    def bg_task():
-        if cmd == 'OPEN_ALL':
-            gh.run_sequence('OPEN')
-        elif cmd == 'CLOSE_ALL':
-            gh.run_sequence('CLOSE')
-        elif cmd == 'SET_MODE':
-            gh.mode = params.get('mode', gh.mode)
-            if 'temp' in params and params['temp'] is not None:
-                gh.target_temp = float(params['temp'])
-        elif cmd.startswith('PARTIAL_') and cmd.count('_') == 1:
-            percentage = int(cmd.split('_')[1])
-            gh.run_sequence_partial('OPEN', percentage)
-        elif cmd.startswith('OPEN_GH') and cmd.count('_') == 2:
-            motor_name = '_'.join(cmd.split('_')[1:])
-            gh.move_motor(motor_name, 'OPEN')
-        elif cmd.startswith('CLOSE_GH') and cmd.count('_') == 2:
-            motor_name = '_'.join(cmd.split('_')[1:])
-            gh.move_motor(motor_name, 'CLOSE')
-        elif cmd.startswith('PARTIAL_GH') and cmd.count('_') == 3:
-            parts = cmd.split('_')
-            motor_name = f"{parts[1]}_{parts[2]}"
-            target_pos = int(parts[3])
-            placeholder = 'OPEN' if target_pos > gh.gate_positions.get(motor_name, 0) else 'CLOSE'
-            gh.move_motor_partial(motor_name, placeholder, target_pos)
-
-    threading.Thread(target=bg_task).start()
-    return jsonify({'ok': True})
-
-@app.route('/api/target', methods=['POST'])
-def api_target():
-    if gh is None: return jsonify({'error': 'System not initialized'}), 500
-    data = request.json
-    gh.target_temp = float(data.get('target', DEFAULT_TARGET_TEMP))
-    return jsonify({'ok': True})
-
-@app.route('/api/settings')
-def api_settings():
-    """Proxy für Settings GET - lädt von REST API"""
-    try:
-        response = requests.get(
-            f"{API_URL}/settings",
-            params={'api_key': API_KEY},
-            headers={'X-API-Key': API_KEY},
-            timeout=5
-        )
-        if response.status_code == 200:
-            return jsonify(response.json())
-        else:
-            return jsonify({'error': 'Failed to load settings'}), response.status_code
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/settings', methods=['POST'])
-def api_update_settings():
-    """Proxy für Settings POST - speichert zur REST API"""
-    try:
-        data = request.json
-        response = requests.post(
-            f"{API_URL}/settings",
-            params={'api_key': API_KEY},
-            headers={'X-API-Key': API_KEY, 'Content-Type': 'application/json'},
-            json=data,
-            timeout=5
-        )
-        
-        if response.status_code == 200:
-            # Alle Einstellungen lokal neu laden
-            if gh:
-                gh._load_settings_from_api()
-            
-            return jsonify(response.json())
-        else:
-            return jsonify({'error': 'Failed to update settings'}), response.status_code
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/restart-service', methods=['POST'])
-def api_restart_service():
-    """Startet den greenhouse_api_client Service neu, damit neue Settings geladen werden"""
-    import subprocess
-    try:
-        result = subprocess.run(
-            ['sudo', 'systemctl', 'restart', 'greenhouse_api_client.service'],
-            capture_output=True, text=True, timeout=10
-        )
-        if result.returncode == 0:
-            return jsonify({'success': True, 'message': 'Service neu gestartet'})
-        else:
-            return jsonify({'success': False, 'error': result.stderr}), 500
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-# --- AUTO-LOOP (Hintergrund) ---
-def auto_loop():
-    """Hintergrund-Loop für die Automatik (nur aktiv wenn greenhouse_web.py direkt gestartet wird).
-    Im API-Client-Betrieb übernimmt greenhouse_api_client.py die Steuerung."""
-    while True:
-        try:
-            if gh:
-                # Gate Auto Settings von API laden
-                try:
-                    gate_resp = requests.get(
-                        f"{API_URL}/gate-auto-mode",
-                        params={'api_key': API_KEY},
-                        headers={'X-API-Key': API_KEY},
-                        timeout=5
-                    )
-                    gate_settings = gate_resp.json() if gate_resp.status_code == 200 else None
-                except Exception:
-                    gate_settings = None
-                
-                # Auch Gate Enabled Status (Wintermodus) laden
-                try:
-                    enabled_resp = requests.get(
-                        f"{API_URL}/gate-enabled",
-                        params={'api_key': API_KEY},
-                        headers={'X-API-Key': API_KEY},
-                        timeout=5
-                    )
-                    gate_enabled = enabled_resp.json() if enabled_resp.status_code == 200 else None
-                except Exception:
-                    gate_enabled = None
-                
-                gh.check_auto_logic(gate_settings, gate_enabled)
-        except Exception as e:
-            print(f"Auto-Loop Fehler: {e}")
-        time.sleep(300)  # Alle 5 Minuten
-
-# --- MAIN ---
-if __name__ == '__main__':
-    print("=" * 50)
-    print("🌱 GEWÄCHSHAUS-STEUERUNG")
-    print("=" * 50)
-    print(f"Web-Interface: http://luzPi:{WEB_PORT}")
-    print(f"               http://192.168.178.132:{WEB_PORT}")
-    print("=" * 50)
-    
-    # System initialisieren
-    init_global_system()
-    
-    # Auto-Loop starten
-    threading.Thread(target=auto_loop, daemon=True).start()
-    
-    # Web-Server starten
-    app.run(host='0.0.0.0', port=WEB_PORT, debug=False)

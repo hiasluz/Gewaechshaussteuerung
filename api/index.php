@@ -11,7 +11,7 @@
  * - POST /api/command/{id}/fail     -> Befehl als fehlgeschlagen markieren
  * - POST /api/login             -> Einloggen
  * - POST /api/logout            -> Ausloggen
- * - GET  /api/check-auth        -> Prüfen ob eingeloggt
+ * - GET  /api/auth-check        -> Prüfen ob eingeloggt
  * - GET  /api/ventilation       -> Ventilation Config abrufen
  * - POST /api/ventilation       -> Ventilation Config aktualisieren
  * - POST /api/ventilation/mark-run -> Ventilation als ausgeführt markieren
