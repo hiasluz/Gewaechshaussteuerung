@@ -4,25 +4,30 @@ Dieses Dokument beschreibt die technische Architektur, die Hardware-Belegung und
 
 ## 🏗 Architektur
 
-Das System besteht aus zwei Hauptkomponenten auf dem Raspberry Pi:
+Das System besteht aus drei zentralen Komponenten: dem Web-Frontend, der zentralen REST-API (PHP/MySQL) und dem Hardware-Client auf dem Raspberry Pi.
 
 1.  **Hardware-Layer (`greenhouse_web.py`)**:
+    *   Fungiert ausschließlich als Python-Modul für die Hardware-Abstraktion (enthält **keinen** lokalen Webserver mehr).
     *   Verwaltet den direkten Zugriff auf die GPIO-Pins.
-    *   Bietet eine lokale API (Flask) zur Steuerung der Motoren und Auslesen der Sensoren.
-    *   Speichert den aktuellen Zustand (Tor-Positionen) in einer lokalen Variable und synchronisiert diesen mit der Remote-Datenbank.
+    *   Speichert den aktuellen Zustand (Tor-Positionen) im RAM und übernimmt die Automatik-Logik (`check_auto_logic`).
     *   **Positions-Tracking**: Berechnet die Laufzeiten der Motoren basierend auf der gewünschten Prozent-Änderung (0-100%).
 
 2.  **API-Client (`greenhouse_api_client.py`)**:
-    *   Der "Vermittler" zwischen dem Pi und dem Web-Server im Internet.
-    *   Pollt alle 10 Sekunden neue Befehle vom Server.
-    *   Sendet alle 10-30 Sekunden Temperaturdaten und Status-Updates an den Server.
-    *   Führt die Automatik-Logik aus (falls aktiviert).
+    *   Der einzige Dienst (`greenhouse-api.service`), der auf dem Raspberry Pi läuft.
+    *   Der "Vermittler" zwischen dem Pi und der zentralen PHP-API (`api/index.php`) im Internet.
+    *   Pollt zyklisch neue Befehle (Smart Polling: 3s bis 30s) von der API.
+    *   Sendet Temperaturdaten, Tor-Positionen und Status-Updates an die API.
+    *   Importiert `greenhouse_web.py`, um die eigentlichen Schaltvorgänge und die Automatik-Regelung auszuführen.
+
+3.  **Zentrale API & Web-Frontend (`api/` und `web/`)**:
+    *   Das Frontend im Browser kommuniziert ausschließlich mit der PHP-API.
+    *   Die API speichert Befehle, Stati und alle Systemeinstellungen (inklusive Zieltemperatur) in einer MySQL-Datenbank (`system_settings`).
 
 ---
 
 ## 🔌 Hardware-Belegung (GPIO)
 
-Das System nutzt die BCM-Nummerierung der Pins. Alle Schaltungen sind **Active Low** (Relais schalten bei `GPIO.LOW`).
+Das System nutzt die BCM-Nummerierung der Pins. Alle Schaltungen für Tore und Relais sind **Active Low** (Relais schalten bei `GPIO.LOW` bzw. `0`).
 
 ### Motoren (Tore)
 Jeder Motor hat zwei Pins: einen für AUF und einen für ZU.
@@ -50,17 +55,25 @@ Jeder Motor hat zwei Pins: einen für AUF und einen für ZU.
 
 ---
 
-## ⚙️ Konfiguration
+## ⚙️ Konfiguration & Automatik
 
-Alle wichtigen Einstellungen befinden sich am Anfang der Skripte:
+Die Konfiguration wird nicht mehr hart im Code vorgenommen, sondern zentral über das Web-Frontend ("Erweiterte Einstellungen" -> `/api/settings`) verwaltet und in der Datenbank (`system_settings`) gespeichert. Der Pi lädt diese Einstellungen beim Start und regelmäßig herunter.
 
-### `greenhouse_web.py`
-*   `MOTOR_RUNTIME_OPEN / CLOSE`: Kalibrierte Zeit für den kompletten Weg (Standard: 135s / 128s).
-*   `API_URL` & `API_KEY`: Zugangsdaten für den Remote-Server.
+### Wichtige Einstellungen (via Web-Interface)
+*   **Zieltemperatur (`DEFAULT_TARGET_TEMP`)**: Die Wunschtemperatur für den Automatik-Modus.
+*   **Laufzeiten (`MOTOR_RUNTIME_OPEN / CLOSE`)**: Kalibrierte Zeit für den kompletten Weg (Standard: 135s / 128s).
+*   **Polling-Intervalle (`INTERVAL_FAST / NORMAL / SLOW`)**: Dynamische Zeiten zwischen den Befehls-Abfragen.
 
-### `greenhouse_api_client.py`
-*   `POLL_INTERVAL`: Zeit zwischen den Befehls-Abfragen (Standard: 10s).
-*   `AUTO-Logik`: Steuert die Tore in 5%, 10% oder 15% Schritten basierend auf der Differenz zwischen Innen- und Außentemperatur.
+### Automatik-Logik
+*   Die Automatik steuert die Tore in 5%, 10% oder 15% Schritten basierend auf der Differenz zwischen Innen- und Zieltemperatur.
+*   **Global vs. Tor-spezifisch**:
+    *   Ein Tor wird nur automatisch bewegt, wenn sein **eigener** Auto-Schalter auf "AN" steht (und es nicht über den AN/AUS-Schalter für den Wintermodus deaktiviert wurde).
+    *   Steht der **globale Modus** auf AUTO, folgen alle Tore mit aktiviertem Tor-Auto-Schalter der Regelung.
+    *   Steht der **globale Modus** auf MANUAL, können einzelne Tore trotzdem automatisch geregelt werden, sofern ihr spezifischer Tor-Auto-Schalter "AN" ist.
+
+### `.env` Datei (auf dem Pi)
+*   `API_URL` & `API_KEY`: Zugangsdaten für die zentrale REST-API.
+*   `LATITUDE` & `LONGITUDE`: Für die Sonnenaufgangs-/Untergangsberechnung (Lüftungsmodus).
 
 ### Einrichtung & Hilfsskripte (`setup/`)
 *   `setup_ppp.py`: Richtet die LTE-Verbindung ein (SIM7600).
@@ -72,20 +85,21 @@ Alle wichtigen Einstellungen befinden sich am Anfang der Skripte:
 ## 🛠 Fehlerbehebung
 
 ### Dienste neu starten
+Das System läuft auf dem Pi als einziger Hintergrunddienst:
 ```bash
-sudo systemctl restart greenhouse-client.service
+sudo systemctl restart greenhouse-api.service
 ```
 
 ### Logs einsehen
 ```bash
-# Aktuelle Befehle und Status-Updates
-journalctl -u greenhouse-client -f
+# Aktuelle Befehle und Status-Updates fortlaufend anzeigen
+journalctl -u greenhouse-api.service -f
 
 # Nur Motor-Bewegungen sehen
-journalctl -u greenhouse-client -f | grep "Motor"
+journalctl -u greenhouse-api.service -f | grep "Motor"
 ```
 
 ### Tore synchronisieren
-Falls die Anzeige im Web-Interface nicht mit der echten Position übereinstimmt:
-1.  Tore über das Interface einmal komplett SCHLIESSEN oder ÖFFNEN. 
-2.  Das System kalibriert sich beim Erreichen der 0% oder 100% Marke automatisch neu.
+Falls die prozentuale Anzeige im Web-Interface nicht mit der echten physischen Position übereinstimmt:
+1.  Tore über das Interface einmal komplett SCHLIESSEN oder komplett ÖFFNEN. 
+2.  Das System kalibriert sich beim Erreichen der 0% oder 100% Marke im Code automatisch neu und setzt den Zähler zurück.
