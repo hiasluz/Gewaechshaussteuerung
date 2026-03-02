@@ -87,16 +87,16 @@ Die Konfiguration wird nicht mehr hart im Code vorgenommen, sondern zentral übe
 ### Dienste neu starten
 Das System läuft auf dem Pi als einziger Hintergrunddienst:
 ```bash
-sudo systemctl restart greenhouse-api.service
+sudo systemctl restart greenhouse-client.service
 ```
 
 ### Logs einsehen
 ```bash
 # Aktuelle Befehle und Status-Updates fortlaufend anzeigen
-journalctl -u greenhouse-api.service -f
+journalctl -u greenhouse-client.service -f
 
 # Nur Motor-Bewegungen sehen
-journalctl -u greenhouse-api.service -f | grep "Motor"
+journalctl -u greenhouse-client.service -f | grep "Motor"
 ```
 
 ### Tore synchronisieren
