@@ -28,37 +28,28 @@ function renderGpioSwitches(switches) {
     if (!container) return;
     
     container.innerHTML = '';
-    container.style.display = 'grid';
-    container.style.gridTemplateColumns = 'repeat(auto-fit, minmax(200px, 1fr))';
-    container.style.gap = '15px';
     
     switches.forEach(sw => {
         const card = document.createElement('div');
-        card.className = 'gpio-switch-card';
-        card.style.cssText = `
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            border: 2px solid ${sw.state ? '#4CAF50' : '#ddd'};
-            transition: all 0.3s;
-        `;
+        const isActive = !sw.state;
+        card.className = `gpio-switch-card ${isActive ? 'gpio-switch-card--active' : 'gpio-switch-card--inactive'}`;
         
         card.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: bold; font-size: 1.1em;">${sw.name}</span>
+            <div class="gpio-switch-card__header">
+                <span class="gpio-switch-card__title">${sw.name}</span>
                 <label class="switch">
                     <input type="checkbox" 
                            id="gpio-${sw.name.replace(/\s+/g, '_')}" 
-                           ${!sw.state ? 'checked' : ''}
+                           ${isActive ? 'checked' : ''}
                            onchange="toggleGpioSwitch('${sw.name}', !this.checked)">
                     <span class="slider"></span>
                 </label>
             </div>
-            <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+            <div class="gpio-switch-card__pin">
                 GPIO Pin: ${sw.gpio_pin}
             </div>
-            <div style="margin-top: 5px; font-size: 0.9em; font-weight: bold; color: ${!sw.state ? '#4CAF50' : '#999'};">
-                ${!sw.state ? '🟢 Aktiv' : '⚪ Inaktiv'}
+            <div class="gpio-switch-card__state ${isActive ? 'gpio-switch-card__state--active' : 'gpio-switch-card__state--inactive'}">
+                ${isActive ? '🟢 Aktiv' : '⚪ Inaktiv'}
             </div>
         `;
         

@@ -1,4 +1,68 @@
 /* 
+   Auto-Toggle Switch - Basis-Styling
+   Macht aus Checkboxen schöne Toggle-Slider
+*/
+
+.auto-toggle-container {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 10px;
+	justify-content: center;
+}
+
+.auto-toggle-label {
+	font-size: 0.9em;
+	color: #666;
+}
+
+.auto-toggle-switch {
+	position: relative;
+	display: inline-block;
+	width: 50px;
+	height: 28px;
+}
+
+.auto-toggle-switch input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.auto-toggle-slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #ccc;
+	transition: 0.3s;
+	border-radius: 28px;
+}
+
+.auto-toggle-slider:before {
+	position: absolute;
+	content: "";
+	height: 22px;
+	width: 22px;
+	left: 3px;
+	bottom: 3px;
+	background-color: white;
+	transition: 0.3s;
+	border-radius: 50%;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+input:checked + .auto-toggle-slider {
+	background-color: #4caf50;
+}
+
+input:checked + .auto-toggle-slider:before {
+	transform: translateX(22px);
+}
+
+/* 
    Enabled-Toggle (Wintermodus) Styling 
    Rot = AUS (Enabled=0), Grün = AN (Enabled=1)
 */
@@ -26,13 +90,34 @@ input:checked + .enabled-slider {
     opacity: 1; /* Volle Sichtbarkeit für den Toggle selbst */
 }
 
+/* Beide Toggles nebeneinander auf größeren Auflösungen */
+.motor-toggles-row {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 25px;
+	margin-bottom: 15px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #eee;
+}
+
+@media (min-width: 480px) {
+	.motor-toggles-row {
+		flex-direction: row;
+		align-items: center;
+		flex-wrap: wrap;
+		justify-content: space-around;
+	}
+}
+
 .gate-enabled-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.motor-toggles-row .auto-toggle-container {
+	margin-bottom: 0;
 }
 
 .enabled-switch {

@@ -484,6 +484,58 @@ body {
     margin-top: 15px;
 }
 
+/* ===== GPIO SWITCHES ===== */
+
+.gpio-switches-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.gpio-switch-card {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+    transition: all 0.3s;
+}
+
+.gpio-switch-card--active {
+    border-color: #4caf50;
+}
+
+.gpio-switch-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.gpio-switch-card__title {
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+.gpio-switch-card__pin {
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+.gpio-switch-card__state {
+    margin-top: 5px;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.gpio-switch-card__state--active {
+    color: #4caf50;
+}
+
+.gpio-switch-card__state--inactive {
+    color: #999;
+}
+
 /* Toggle Switch */
 .switch {
     position: relative;
@@ -535,9 +587,75 @@ input:checked+.slider:before {
     transform: translateX(26px);
 }
 
+/* ===== CUSTOM VENTILATION PHASES ===== */
+
+.custom-phase-empty {
+    color: #999;
+    font-style: italic;
+}
+
+.custom-phase-item {
+    background: #f9f9f9;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    border-left: 4px solid #999;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.custom-phase-item--enabled {
+    border-left-color: #4caf50;
+}
+
+.custom-phase-main {
+    flex: 1;
+}
+
+.custom-phase-name {
+    font-weight: 600;
+}
+
+.custom-phase-time {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.custom-phase-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.custom-phase-delete-btn {
+    background: #f44336;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background 0.2s;
+}
+
+.custom-phase-delete-btn:hover {
+    background: #d32f2f;
+}
+
+#add-phase-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* ===== FOOTER ===== */
 
 .footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
     text-align: center;
     color: #666;
     margin-top: 20px;
@@ -574,7 +692,7 @@ input:checked+.slider:before {
 
 .controls {
     display: grid;
-    grid-template-areas: "toggle" "buttons" "temp";
+    grid-template-areas: "toggle" "temp" "buttons";
     gap: 20px;
     align-items: center;
 }

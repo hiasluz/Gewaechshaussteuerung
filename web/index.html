@@ -30,7 +30,6 @@
         <!-- Header -->
         <header class="header">
             <h1><img src="favicon.ico" class="logo" alt="Logo"> Gewächshaus Steuerung</h1>
-            <button id="logout-btn" class="logout-btn">Abmelden</button>
         </header>
 
         <!-- Feedback Div -->
@@ -82,13 +81,13 @@
                     </label>
                     <span class="auto-toggle-label">Automatik</span>
                 </div>
+                <h2 class="target-temp-display" id="target-temp-display">Zieltemperatur Automatik: <span id="target-temp-value">---</span>°C</h2>
                 <div class="button-group">
                     <button class="btn btn-open" id="btn-open" onclick="sendCommand('OPEN_ALL')">🔼 Alles
                         ÖFFNEN</button>
                     <button class="btn btn-close" id="btn-close" onclick="sendCommand('CLOSE_ALL')">🔽 Alles
                         SCHLIESSEN</button>
                 </div>
-                <p class="target-temp-display" id="target-temp-display">Zieltemperatur: <span id="target-temp-value">---</span>°C</p>
             </div>
 
             <!-- Global Partial Opening -->
@@ -102,17 +101,6 @@
             </div>
         </div>
 
-        <!-- Individual Motor Controls -->
-        <!--
-            Logik der Schalter:
-            • AN/AUS (Enabled): Deaktiviert ein Tor komplett (Wintermodus).
-              Deaktivierte Tore werden WEDER manuell noch automatisch bewegt.
-            • Auto: Steuert, ob dieses Tor im automatischen Temperatur-Loop berücksichtigt wird.
-              – Bei globalem AUTO + Tor-Auto AN  → Tor folgt der Automatik.
-              – Bei globalem AUTO + Tor-Auto AUS → Tor muss manuell gesteuert werden.
-              – Bei globalem MANUAL + Tor-Auto AN → Tor folgt trotzdem der Automatik.
-              Die Zieltemperatur wird ausschließlich unter „Erweiterte Einstellungen" konfiguriert.
-        -->
         <div class="card">
             <h2>🎛️ Einzelsteuerung</h2>
             <div class="motor-grid">
@@ -120,6 +108,7 @@
                 <div class="motor-card">
                     <h3>GH-Süd Tor-Süden</h3>
 
+                    <div class="motor-toggles-row">
                     <!-- Enabled-Toggle (AN/AUS, Wintermodus) -->
                     <div class="gate-enabled-container">
                         <label class="auto-toggle-switch enabled-switch">
@@ -138,6 +127,7 @@
                             <span class="auto-toggle-slider"></span>
                         </label>
                         <span class="auto-toggle-label">Auto</span>
+                    </div>
                     </div>
 
                     <div class="position-display">
@@ -164,6 +154,7 @@
                 <div class="motor-card">
                     <h3>GH-Süd Tor-Norden</h3>
 
+                    <div class="motor-toggles-row">
                     <!-- Enabled-Toggle (AN/AUS, Wintermodus) -->
                     <div class="gate-enabled-container">
                         <label class="auto-toggle-switch enabled-switch">
@@ -182,6 +173,7 @@
                             <span class="auto-toggle-slider"></span>
                         </label>
                         <span class="auto-toggle-label">Auto</span>
+                    </div>
                     </div>
 
                     <div class="position-display">
@@ -209,6 +201,7 @@
                 <div class="motor-card">
                     <h3>GH-Mitte Tor-Süden</h3>
 
+                    <div class="motor-toggles-row">
                     <!-- Enabled-Toggle (AN/AUS, Wintermodus) -->
                     <div class="gate-enabled-container">
                         <label class="auto-toggle-switch enabled-switch">
@@ -227,6 +220,7 @@
                             <span class="auto-toggle-slider"></span>
                         </label>
                         <span class="auto-toggle-label">Auto</span>
+                    </div>
                     </div>
 
                     <div class="position-display">
@@ -253,6 +247,7 @@
                 <div class="motor-card">
                     <h3>GH-Mitte Tor-Norden</h3>
 
+                    <div class="motor-toggles-row">
                     <!-- Enabled-Toggle (AN/AUS, Wintermodus) -->
                     <div class="gate-enabled-container">
                         <label class="auto-toggle-switch enabled-switch">
@@ -271,6 +266,7 @@
                             <span class="auto-toggle-slider"></span>
                         </label>
                         <span class="auto-toggle-label">Auto</span>
+                    </div>
                     </div>
 
                     <div class="position-display">
@@ -298,6 +294,7 @@
                 <div class="motor-card">
                     <h3>GH-Norden Tor-Süden</h3>
 
+                    <div class="motor-toggles-row">
                     <!-- Enabled-Toggle (AN/AUS, Wintermodus) -->
                     <div class="gate-enabled-container">
                         <label class="auto-toggle-switch enabled-switch">
@@ -316,6 +313,7 @@
                             <span class="auto-toggle-slider"></span>
                         </label>
                         <span class="auto-toggle-label">Auto</span>
+                    </div>
                     </div>
 
                     <div class="position-display">
@@ -342,6 +340,7 @@
                 <div class="motor-card">
                     <h3>GH-Norden Tor-Norden</h3>
 
+                    <div class="motor-toggles-row">
                     <!-- Enabled-Toggle (AN/AUS, Wintermodus) -->
                     <div class="gate-enabled-container">
                         <label class="auto-toggle-switch enabled-switch">
@@ -360,6 +359,7 @@
                             <span class="auto-toggle-slider"></span>
                         </label>
                         <span class="auto-toggle-label">Auto</span>
+                    </div>
                     </div>
 
                     <div class="position-display">
@@ -608,6 +608,7 @@
 
         <!-- Footer  -->
         <footer class="footer">
+            <button id="logout-btn" class="logout-btn">Abmelden</button>
             <small>Letzte Aktualisierung: <span id="last-update">---</span></small>
         </footer>
     </div>

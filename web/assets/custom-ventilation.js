@@ -75,38 +75,29 @@ function renderCustomPhases() {
     container.innerHTML = '';
     
     if (customPhases.length === 0) {
-        container.innerHTML = '<p style="color: #999; font-style: italic;">Keine individuellen Lüftungszeiten definiert</p>';
+        container.innerHTML = '<p class="custom-phase-empty">Keine individuellen Lüftungszeiten definiert</p>';
     } else {
         customPhases.forEach((phase, index) => {
             const phaseDiv = document.createElement('div');
-            phaseDiv.className = 'custom-phase-item';
-            phaseDiv.style.cssText = `
-                background: #f9f9f9;
-                padding: 12px;
-                margin-bottom: 10px;
-                border-radius: 5px;
-                border-left: 4px solid ${phase.enabled ? '#4CAF50' : '#999'};
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            `;
+            phaseDiv.className = `custom-phase-item ${phase.enabled ? 'custom-phase-item--enabled' : 'custom-phase-item--disabled'}`;
             
             phaseDiv.innerHTML = `
-                <div style="flex: 1;">
-                    <strong>${phase.name || `Phase ${index + 1}`}</strong><br>
-                    <span style="color: #666; font-size: 0.9em;">
+                <div class="custom-phase-main">
+                    <strong class="custom-phase-name">${phase.name || `Phase ${index + 1}`}</strong><br>
+                    <span class="custom-phase-time">
                         ${phase.start_time.substring(0, 5)} - ${phase.end_time.substring(0, 5)}
                     </span>
                 </div>
-                <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="custom-phase-actions">
                     <label class="switch">
                         <input type="checkbox" 
                                ${phase.enabled ? 'checked' : ''}
                                onchange="toggleCustomPhase(${phase.id}, this.checked)">
                         <span class="slider"></span>
                     </label>
-                    <button onclick="deleteCustomPhase(${phase.id})" 
-                            style="background: #f44336; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">
+                    <button type="button"
+                            class="custom-phase-delete-btn"
+                            onclick="deleteCustomPhase(${phase.id})">
                         🗑️
                     </button>
                 </div>
@@ -119,7 +110,6 @@ function renderCustomPhases() {
     // Add-Button aktivieren/deaktivieren
     if (addBtn) {
         addBtn.disabled = customPhases.length >= MAX_CUSTOM_PHASES;
-        addBtn.style.opacity = customPhases.length >= MAX_CUSTOM_PHASES ? '0.5' : '1';
     }
 }
 
